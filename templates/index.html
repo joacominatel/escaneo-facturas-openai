@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome Page</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="container mx-auto mt-10 p-6 bg-white shadow-md rounded">
+      <h1 class="text-2xl font-bold mb-4">Upload Invoice Files</h1>
+      <form
+        id="upload-form"
+        method="POST"
+        action="{{ url_for('api.process_invoices') }}"
+        enctype="multipart/form-data"
+        class="space-y-4"
+      >
+        <div>
+          <label class="block text-sm font-medium text-gray-700" for="file"
+            >Select File</label
+          >
+          <input
+            type="file"
+            id="file"
+            name="file"
+            accept=".pdf,.zip,.7z"
+            required
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          Upload and Process
+        </button>
+      </form>
+
+      <!-- Result Section -->
+      <div id="result-section" class="mt-6 hidden">
+        <h2 class="text-xl font-semibold mb-2">Result</h2>
+        <pre
+          id="json-result"
+          class="p-4 bg-gray-100 rounded overflow-auto"
+        ></pre>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("upload-form")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault(); // Prevent default form submission
+
+          const formData = new FormData(event.target);
+          const fileInput = document.getElementById("file");
+          const file = fileInput.files[0];
+          const submitButton = event.target.querySelector(
+            'button[type="submit"]'
+          );
+
+          // Check if file is valid
+          const allowedExtensions = ["pdf", "zip", "7z"];
+          const fileExtension = file.name.split(".").pop().toLowerCase();
+
+          if (!allowedExtensions.includes(fileExtension)) {
+            alert("Invalid file type. Only PDF, ZIP, and 7Z are allowed.");
+            return;
+          }
+
+          // Disable button and show loading state
+          submitButton.disabled = true;
+          submitButton.textContent = "Loading...";
+
+          // Send the file to the server
+          try {
+            const response = await fetch(event.target.action, {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok) throw new Error("Failed to process the file");
+
+            const result = await response.json();
+
+            // Enable button and reset text
+            submitButton.disabled = false;
+            submitButton.textContent = "Upload and Process";
+
+            // Format and display the result
+            document
+              .getElementById("result-section")
+              .classList.remove("hidden");
+            const resultSection = document.getElementById("json-result");
+            resultSection.innerHTML = "";
+
+            // Helper to check and return valid fields
+            const getField = (field, fallback = "N/A") => field || fallback;
+
+            // Display invoice details
+            const detailsHtml = `
+                    <p><strong>Invoice Number:</strong> ${getField(
+                      result["Invoice number"]
+                    )}</p>
+                    <p><strong>Date:</strong> ${getField(result["Date"])}</p>
+                    <p><strong>Amount:</strong> ${getField(
+                      result["Amount"]
+                    )}</p>
+                    <p><strong>Currency:</strong> ${getField(
+                      result["Currency"]
+                    )}</p>
+                    <p><strong>VAT:</strong> ${getField(result["VAT"])}</p>
+                    <p><strong>Billing Period:</strong> ${getField(
+                      result["Billing period"]
+                    )}</p>
+                    <p><strong>Payment Terms:</strong> ${getField(
+                      result["Payment terms"]
+                    )}</p>
+                    <p><strong>Bill to:</strong></p>
+                    <ul>
+                        <li><strong>Company:</strong> ${getField(
+                          result?.["Bill to"]?.Company
+                        )}</li>
+                        <li><strong>Address:</strong> ${getField(
+                          result?.["Bill to"]?.Address
+                        )}</li>
+                        <li><strong>Attention:</strong> ${getField(
+                          result?.["Bill to"]?.Attention
+                        )}</li>
+                    </ul>
+                `;
+
+            resultSection.innerHTML += detailsHtml;
+
+            // Display items in a table
+            const items = result["Items"];
+            if (items && items.length > 0) {
+              const tableHtml = `
+                        <h3 class="mt-4 font-semibold">Items</h3>
+                        <table class="w-full text-sm text-left text-gray-500 border-collapse mt-2">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="border px-4 py-2">Description</th>
+                                    <th class="border px-4 py-2">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${items
+                                  .map(
+                                    (item) => `
+                                    <tr>
+                                        <td class="border px-4 py-2">${getField(
+                                          item.Description
+                                        )}</td>
+                                        <td class="border px-4 py-2">${getField(
+                                          item.Total
+                                        )}</td>
+                                    </tr>
+                                `
+                                  )
+                                  .join("")}
+                            </tbody>
+                        </table>
+                    `;
+
+              resultSection.innerHTML += tableHtml;
+            }
+          } catch (error) {
+            // Enable button and reset text
+            submitButton.disabled = false;
+            submitButton.textContent = "Upload and Process";
+
+            alert(`Error: ${error.message}`);
+          }
+        });
+    </script>
+  </body>
+</html>
