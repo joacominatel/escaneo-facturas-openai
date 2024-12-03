@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Upload, FileUp, Cloud, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import axios from "axios"
 
 export default function AIChatAttachment() {
   const [files, setFiles] = useState<File[]>([])
@@ -15,6 +16,7 @@ export default function AIChatAttachment() {
   const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -68,10 +70,28 @@ export default function AIChatAttachment() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the files and question to your AI chat backend
-    console.log("Files:", files)
-    console.log("Question:", question)
-    showNotification('success', 'Submitted successfully!')
+    if (files.length === 0) {
+      showNotification('error', 'Please upload at least one file.')
+      return
+    }
+
+    const formData = new FormData()
+    files.forEach(file => formData.append("files", file))
+    formData.append("question", question)
+    
+    // create axios and return the response data
+    axios.post(`${API_URL}/process_invoices`, formData)
+      .then(response => {
+        console.log(response)
+        showNotification('success', 'Files and question sent to AI chat.')
+        setFiles([])
+        setQuestion("")
+      })
+      .catch(error => {
+        console.error(error)
+        showNotification('error', 'Failed to send files and question to AI chat.')
+      })
+
   }
 
   const showNotification = (type: 'success' | 'error', message: string) => {

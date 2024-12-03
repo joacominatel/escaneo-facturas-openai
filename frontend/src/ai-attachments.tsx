@@ -6,12 +6,15 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Upload, FileUp, Cloud } from 'lucide-react'
+import axios from "axios"
 
 export default function AIChatAttachment() {
   const [file, setFile] = useState<File | null>(null)
   const [question, setQuestion] = useState("")
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // get from environment variable
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -55,10 +58,13 @@ export default function AIChatAttachment() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the file and question to your AI chat backend
-    console.log("File:", file)
-    console.log("Question:", question)
-    alert("Submitted successfully!")
+    // use next_public_api_url to send the file and question to the AI chat
+    const formData = new FormData()
+    formData.append("file", file as Blob)
+    formData.append("question", question)
+    const response = axios.post(`${API_URL}/process_invoices`, formData)
+    console.log(response)
+    alert("Files and question sent to AI chat")
   }
 
   return (
