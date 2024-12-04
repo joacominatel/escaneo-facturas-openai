@@ -166,3 +166,5 @@ facturas/*
 
 alembic/
 alembic.ini
+.facturas/
+tmp/

@@ -4,10 +4,20 @@ import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, FileUp, Cloud, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Upload, FileUp, Cloud, ChevronDown, ChevronUp, X, Loader } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { InvoiceResultsWidget } from "@/components/invoice-results-widget"
 import axios from "axios"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+
+interface InvoiceResult {
+  file_name: string
+  file_id: string
+  results: any[]
+  status: string
+}
 
 export default function AIChatAttachment() {
   const [files, setFiles] = useState<File[]>([])
@@ -15,8 +25,11 @@ export default function AIChatAttachment() {
   const [dragActive, setDragActive] = useState(false)
   const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [processedResults, setProcessedResults] = useState<InvoiceResult[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const [isLoading, setIsLoading] = useState(false)
+
+  // test data for InvoiceResultsWidget
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -68,8 +81,9 @@ export default function AIChatAttachment() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     if (files.length === 0) {
       showNotification('error', 'Please upload at least one file.')
       return
@@ -79,19 +93,20 @@ export default function AIChatAttachment() {
     files.forEach(file => formData.append("files", file))
     formData.append("question", question)
     
-    // create axios and return the response data
-    axios.post(`${API_URL}/process_invoices`, formData)
-      .then(response => {
-        console.log(response)
-        showNotification('success', 'Files and question sent to AI chat.')
-        setFiles([])
-        setQuestion("")
-      })
-      .catch(error => {
-        console.error(error)
-        showNotification('error', 'Failed to send files and question to AI chat.')
-      })
-
+    try {
+      const response = await axios.post(`${API_URL}/process_invoices`, formData)
+      console.log(response)
+      if (response) {
+        setProcessedResults(prevResults => [...prevResults, ...response.data.processed_data])      }
+      showNotification('success', 'Files and question sent to AI chat.')
+      setFiles([])
+      setQuestion("")
+    } catch (error) {
+      console.error(error)
+      showNotification('error', 'Failed to send files and question to AI chat.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -105,8 +120,18 @@ export default function AIChatAttachment() {
     return `${zipCount} .zip ${zipCount === 1 ? 'file' : 'files'} - ${pdfCount} .pdf ${pdfCount === 1 ? 'file' : 'files'}`
   }
 
+  const handleDeleteAllResults = () => {
+    setProcessedResults([])
+    showNotification('success', 'All invoice results deleted.')
+  }
+
+  const handleDeleteOneResult = (fileId: string) => {
+    setProcessedResults(prevResults => prevResults.filter(result => result.file_id !== fileId))
+    showNotification('success', 'Invoice result deleted.')
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Attach Files to AI Chat</CardTitle>
@@ -194,10 +219,22 @@ export default function AIChatAttachment() {
         </CardContent>
         <CardFooter>
           <Button className="w-full" type="submit" onClick={handleSubmit}>
-            Submit
+          {isLoading ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Submit'
+            )}
           </Button>
         </CardFooter>
       </Card>
+      <InvoiceResultsWidget 
+        results={processedResults}
+        onDeleteAll={handleDeleteAllResults}
+        onDeleteOne={handleDeleteOneResult}
+      />
       <AnimatePresence>
         {notification && (
           <motion.div
