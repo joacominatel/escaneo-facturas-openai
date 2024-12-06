@@ -26,6 +26,7 @@ try:
     # Función para inicializar las tablas
     def init_db():
         from databases.models.file_record import FileRecord  # Importar modelo
+        from databases.models.invoice import InvoiceData
         Base.metadata.create_all(bind=engine)
         print("Tablas creadas")
 
