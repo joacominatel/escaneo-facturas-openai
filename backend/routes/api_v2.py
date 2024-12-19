@@ -11,11 +11,10 @@ from modules.assistant_v2 import analyze_text, allowed_file
 api_v2 = Blueprint("api_v2", __name__)
 
 UPLOAD_FOLDER = tempfile.mkdtemp()
-api_v2.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'pdf'}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
-@api_v2.route('/api/analyze', methods=['POST'])
+@api_v2.route('/api_v2/analyze', methods=['POST'])
 def analyze():
     if 'files' not in request.files:
         return jsonify({'error': 'No se han proporcionado archivos'}), 400
@@ -38,9 +37,9 @@ def analyze():
         
         try:
             filename = secure_filename(file.filename)
-            file_path = os.path.join(api_v2.config['UPLOAD_FOLDER'], filename)
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
             file.save(file_path)
-
+            
             images = convert_from_path(file_path)
             text = ""
             for image in images:

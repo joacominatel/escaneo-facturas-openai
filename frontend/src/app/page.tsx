@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { InvoiceResultsWidget } from "@/components/invoice-results-widget"
 import axios from "axios"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api_v2"
 
 interface InvoiceResult {
   file_name: string
@@ -94,10 +94,10 @@ export default function AIChatAttachment() {
     formData.append("question", question)
     
     try {
-      const response = await axios.post(`${API_URL}/process_invoices`, formData)
+      const response = await axios.post(`${API_URL}/analyze`, formData)
       console.log(response)
       if (response) {
-        setProcessedResults(prevResults => [...prevResults, ...response.data.processed_data])      }
+        setProcessedResults(prevResults => [...prevResults, ...response.data])      }
       showNotification('success', 'Files and question sent to AI chat.')
       setFiles([])
       setQuestion("")
@@ -125,8 +125,8 @@ export default function AIChatAttachment() {
     showNotification('success', 'All invoice results deleted.')
   }
 
-  const handleDeleteOneResult = (fileId: string) => {
-    setProcessedResults(prevResults => prevResults.filter(result => result.file_id !== fileId))
+  const handleDeleteOneResult = (index: number) => {
+    setProcessedResults(prevResults => prevResults.filter((_, i) => i !== index))
     showNotification('success', 'Invoice result deleted.')
   }
 

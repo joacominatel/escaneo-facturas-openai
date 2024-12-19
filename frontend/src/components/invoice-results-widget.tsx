@@ -6,26 +6,23 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface InvoiceResult {
-  file_name: string
-  file_id: string
-  results: any[]
-  status: string
+  [key: string]: any
 }
 
 interface InvoiceResultsWidgetProps {
   results: InvoiceResult[]
   onDeleteAll: () => void
-  onDeleteOne: (fileId: string) => void
+  onDeleteOne: (index: number) => void
 }
 
 export function InvoiceResultsWidget({ results, onDeleteAll, onDeleteOne }: InvoiceResultsWidgetProps) {
-  const [openItems, setOpenItems] = useState<string[]>([])
+  const [openItems, setOpenItems] = useState<number[]>([])
 
-  const toggleItem = (fileId: string) => {
-    setOpenItems(prev => 
-      prev.includes(fileId) 
-        ? prev.filter(id => id !== fileId)
-        : [...prev, fileId]
+  const toggleItem = (index: number) => {
+    setOpenItems(prev =>
+      prev.includes(index)
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
     )
   }
 
@@ -59,15 +56,15 @@ export function InvoiceResultsWidget({ results, onDeleteAll, onDeleteOne }: Invo
         </AlertDialog>
       </CardHeader>
       <CardContent>
-        {results.map((result) => (
+        {results.map((result, index) => (
           <Collapsible
-            key={result.file_id}
-            open={openItems.includes(result.file_id)}
-            onOpenChange={() => toggleItem(result.file_id)}
+            key={index}
+            open={openItems.includes(index)}
+            onOpenChange={() => toggleItem(index)}
             className="mb-4 last:mb-0"
           >
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold">{result.file_name}</h3>
+              <h3 className="font-semibold">Invoice {index + 1}</h3>
               <div className="flex items-center space-x-2">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -79,40 +76,37 @@ export function InvoiceResultsWidget({ results, onDeleteAll, onDeleteOne }: Invo
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete this invoice result?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the processed result for {result.file_name}.
+                        This action cannot be undone. This will permanently delete the processed result for invoice {index + 1}.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDeleteOne(result.file_id)}>Delete</AlertDialogAction>
+                      <AlertDialogAction onClick={() => onDeleteOne(index)}>Delete</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm">
-                    {openItems.includes(result.file_id) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    {openItems.includes(index) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                 </CollapsibleTrigger>
               </div>
             </div>
             <CollapsibleContent>
-              <div className="mt-2">
-                <p>Status: {result.status}</p>
-                {result.results && result.results.length > 0 && (
-                  <div className="mt-2 relative">
-                    <pre className="bg-muted p-2 rounded-md overflow-x-auto">
-                      <code>{JSON.stringify(result.results[0], null, 2)}</code>
-                    </pre>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => copyToClipboard(JSON.stringify(result.results[0], null, 2))}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+              <div className="mt-2 relative">
+                <pre className="bg-muted p-2 rounded-md overflow-x-auto">
+                  <code>
+                    {JSON.stringify(result, null, 2)}
+                  </code>
+                </pre>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={() => copyToClipboard(JSON.stringify(result, null, 2))}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
             </CollapsibleContent>
           </Collapsible>
