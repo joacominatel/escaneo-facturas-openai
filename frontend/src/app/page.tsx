@@ -61,12 +61,12 @@ export default function AIChatAttachment() {
     const validFiles = newFiles.filter(file => 
       file.type === "application/pdf" || file.type === "application/zip" || file.name.endsWith('.zip')
     )
-    if (validFiles.length + files.length > 10) {
-      showNotification('error', 'You can upload a maximum of 10 files.')
-      return
-    }
+    // if (validFiles.length + files.length > 10) {
+    //   showNotification('error', 'You can upload a maximum of 10 files.')
+    //   return
+    // }
     if (validFiles.length !== newFiles.length) {
-      showNotification('error', 'Please upload only .pdf or .zip files.')
+      showNotification('error', 'Please upload only .pdf files.')
     }
     setFiles(prevFiles => [...prevFiles, ...validFiles].slice(0, 10))
   }

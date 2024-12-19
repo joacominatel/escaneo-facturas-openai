@@ -7,8 +7,12 @@ from PIL import Image
 import io
 from pdf2image import convert_from_path
 from modules.assistant_v2 import analyze_text, allowed_file
+from databases.db import SessionLocal, init_db
 
 api_v2 = Blueprint("api_v2", __name__)
+
+# Inicializar la base de datos
+init_db()
 
 UPLOAD_FOLDER = tempfile.mkdtemp()
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -55,5 +59,20 @@ def analyze():
         except Exception as e:
             results.append({"error": f"Error al procesar el archivo {file.filename}: {e}"})
             print(f"Error al procesar archivo: {e}")
+
+        try:
+            from databases.models.invoice import InvoiceData
+            
+            # Open a database session
+            session = SessionLocal()
+
+            # Save each invoice data
+            for result in results:
+                if "error" in result:
+                    continue
+
+                InvoiceData.save_invoice_data(session, result)
+        except Exception as e:
+            return jsonify({"error": "Error al guardar datos de la factura en la base de datos", "error": e}), 500
 
     return jsonify(results), 200
