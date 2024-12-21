@@ -6,6 +6,12 @@ import time, re
 
 ALLOWED_EXTENSIONS = {'pdf'}
 
+# pytesseract config for windows
+if os.name == 'nt':
+    # C:\Program Files\Tesseract-OCR
+    pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+
+# Configurar la clave de la API de OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
     print("Error: Variable de entorno OPENAI_API_KEY no definida.")

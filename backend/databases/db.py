@@ -25,11 +25,18 @@ try:
 
     # Función para inicializar las tablas
     def init_db():
-        from databases.models.file_record import FileRecord  # Importar modelo
+        from databases.models.file_record import FileRecord
         from databases.models.invoice import InvoiceData
+        from databases.models.log import LogData
+
         Base.metadata.create_all(bind=engine)
         print("Tablas creadas")
 
 except Exception as e:
+    from modules.save_log import save_log
+
+    log_action = "database_error"
+    log_message = f"Error al configurar la base de datos: {e}"
+    save_log(SessionLocal(), log_action, log_message)
     print(f"Error al configurar la base de datos: {e}")
-    raise
+    raise e

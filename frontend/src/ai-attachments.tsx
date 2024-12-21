@@ -14,7 +14,7 @@ export default function AIChatAttachment() {
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // get from environment variable
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api_v2"
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()

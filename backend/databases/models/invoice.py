@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, JSON
 from databases.db import Base
 from datetime import datetime
+from databases.models.log import LogData
+from modules.save_log import save_log
 
 class InvoiceData(Base):
     __tablename__ = "invoice"
@@ -94,6 +96,7 @@ def save_invoice_data(session, invoice_data):
         existing_invoice = session.query(InvoiceData).filter_by(invoice_number=invoice_data.get("invoice_number")).first()
 
         if existing_invoice:
+            save_log(session, "save_invoice", f"La factura {invoice_data.get('invoice_number')} ya existe en la base de datos.", "warning")
             print(f"La factura {invoice_data.get('invoice_number')} ya existe en la base de datos.")
             return {
                 "error": f"La factura {invoice_data.get('invoice_number')} ya existe en la base de datos."
@@ -117,7 +120,15 @@ def save_invoice_data(session, invoice_data):
         session.commit()
         print(f"Invoice {invoice.invoice_number} saved successfully!")
 
+        # Log the successful save
+        try:
+            save_log(session, "save_invoice", f"La factura {invoice.invoice_number} se ha guardado correctamente.", "info")
+        except Exception as e:
+            session.rollback()
+            print(f"Error saving log data: {e}")
     except Exception as e:
         session.rollback()
         print(f"Error saving invoice data: {e}")
-        raise #Relanzar la excepcion para verla en el backend
+        raise e
+    finally:
+        session.close()
