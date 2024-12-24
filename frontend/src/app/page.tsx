@@ -15,7 +15,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api_v2
 interface InvoiceResult {
   file_name: string
   file_id: string
-  results: any[]
+  results: string[]
   status: string
 }
 

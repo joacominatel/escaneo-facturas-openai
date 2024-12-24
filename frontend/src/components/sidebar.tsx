@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, MessageSquare, Settings } from 'lucide-react'
+import { Home, FileText, Settings } from 'lucide-react'
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 
 const sidebarItems = [
   { icon: Home, label: "Home", href: "/" },
-  { icon: MessageSquare, label: "Chat", href: "/chat" },
+  { icon: FileText, label: "Invoices", href: "/invoices" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ]
 

@@ -45,7 +45,6 @@ class InvoiceData(Base):
             "created_at": self.created_at,
             "updated_at": self.updated_at
         }
-        
 
 def save_invoice_data(session, invoice_data):
     """Saves the invoice data to the database, handling string conversions.

@@ -109,3 +109,72 @@ def get_logs():
     logs = session.query(LogData).all()
     session.close()
     return jsonify([log.serialize() for log in logs]), 200
+
+@api_v2.route('/api_v2/invoices', methods=['GET'])
+def get_invoices():
+    """
+    Endpoint de la API para obtener todas las facturas.
+
+    Args:
+        offset (query param): El número de resultados a omitir (para paginación).
+        limit (query param): El número máximo de resultados a devolver.
+
+    Returns:
+        Una respuesta JSON que contiene una lista de todas las facturas o un mensaje de error.
+    """
+    from databases.models.invoice import InvoiceData
+
+    try:
+        offset = int(request.args.get('offset', default=0))
+        limit = int(request.args.get('limit', default=20))
+        if offset < 0 or limit < 0:
+            raise ValueError("Los parámetros offset y limit deben ser mayores o iguales a 0.")
+    except ValueError as e:
+        return jsonify({'error': str(e), 'message': 'Los parámetros offset y limit deben ser números enteros'}), 400
+    
+    session = SessionLocal()
+    invoices = session.query(InvoiceData).order_by(InvoiceData.id.desc()).offset(offset).limit(limit).all()
+
+    if invoices:
+        invoice_list = [invoice.serialize() for invoice in invoices]
+        session.close()
+        return jsonify(invoice_list), 200
+    
+    session.close()
+    return jsonify({'error': 'No se encontraron facturas'}), 404
+
+
+@api_v2.route('/api_v2/invoices/<op>', methods=['GET'])
+def get_invoice_by_op(op):
+    """
+    Endpoint de la API para buscar facturas que contengan un número de publicidad específico.
+
+    Args:
+        operation_number: El número de publicidad a buscar.
+        offset (query param): El número de resultados a omitir (para paginación).
+        limit (query param): El número máximo de resultados a devolver.
+
+    Returns:
+        Una respuesta JSON que contiene una lista de facturas coincidentes o un mensaje de error.    """
+    from modules.search_op import search_invoices_by_operation_number
+
+    session = SessionLocal()
+    try:
+        offset = int(request.args.get('offset', default=0))
+        limit = int(request.args.get('limit', default=20))
+        if offset < 0 or limit < 0:
+            raise ValueError("Los parámetros offset y limit deben ser mayores o iguales a 0.")
+        
+    except ValueError as e:
+        session.close()
+        return jsonify({'error': str(e), 'message': 'Los parámetros offset y limit deben ser números enteros'}), 400
+    
+    invoices, total = search_invoices_by_operation_number(session, op, offset, limit)
+
+    if invoices:
+        invoice_list = [invoice.serialize() for invoice in invoices]
+        session.close()
+        return jsonify({'total': total, 'invoices': invoice_list}), 200
+    else:
+        session.close()
+        return jsonify({'error': f"No se encontraron facturas con el número de publicidad {op}"}), 404
