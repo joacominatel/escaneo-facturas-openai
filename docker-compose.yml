@@ -1,0 +1,39 @@
+version: "3.9"
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Your_Strong_Password_Here" # Cambia esto!!!
+    ports:
+      - "1433:1433"
+    volumes:
+      - db_data:/var/opt/mssql/data
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 1433
+      DB_NAME: invoices
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    command: ["python", "app.py"]
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:5000/api_v2
+    volumes:
+      - ./frontend:/app
+volumes:
+  db_data:
