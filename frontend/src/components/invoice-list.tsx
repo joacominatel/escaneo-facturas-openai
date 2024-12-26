@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, RefreshCw } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface Invoice {
   id: string
@@ -20,7 +21,7 @@ interface Invoice {
   invoice_total: number
   items: {
     description: string
-    operation_numbers: string[]
+    advertising_number: string[]
     subtotal: number
   }[]
   payment_terms: string
@@ -53,11 +54,17 @@ export function InvoiceList() {
   }, [loading, hasMore])
 
   const fetchInvoices = useCallback(async () => {
+    if (loading || !hasMore) return
     setLoading(true)
     setError(null)
     try {
       const response = await axios.get(`${API_URL}/invoices?page=${page}&limit=20${filter ? `&filter=${filter}` : ''}`)
-      setInvoices(prevInvoices => [...prevInvoices, ...response.data])
+      setInvoices(prevInvoices => {
+        const newInvoices: Invoice[] = response.data.filter((newInvoice: Invoice) =>
+          !prevInvoices.some((prevInvoice: Invoice) => prevInvoice.id === newInvoice.id)
+        )
+        return [...prevInvoices, ...newInvoices]
+      })
       setHasMore(response.data.length === 20)
       console.log(response.data)
     } catch (err) {
@@ -66,11 +73,11 @@ export function InvoiceList() {
     } finally {
       setLoading(false)
     }
-  }, [page, filter])
+  }, [page, filter, loading, hasMore])
 
   useEffect(() => {
     fetchInvoices()
-  }, [fetchInvoices])
+  }, [fetchInvoices, page])
 
   useEffect(() => {
     setInvoices([])
@@ -78,20 +85,54 @@ export function InvoiceList() {
     setHasMore(true)
   }, [filter])
 
+  const router = useRouter()
+
+  useEffect(() => {
+    setInvoices([])
+    setPage(1)
+    setHasMore(true)
+    setFilter('')
+
+    // clean up
+    return () => {
+      setInvoices([])
+      setPage(1)
+      setHasMore(true)
+      setFilter('')
+    }
+  }, [router])
+
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(e.target.value)
   }
+
+  const handleReload = useCallback(() => {
+    setInvoices([])
+    setPage(1)
+    setHasMore(true)
+    setFilter('')
+  }, [fetchInvoices])
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Invoices</CardTitle>
-        <Input
-          placeholder="Filter by operation number"
-          value={filter}
-          onChange={handleFilterChange}
-          className="max-w-sm"
-        />
+        <div className='flex justify-between items-center mt-4'>
+          <Input
+            placeholder="Filter by advertising number"
+            value={filter}
+            onChange={handleFilterChange}
+            className="max-w-sm"
+          />
+          <Button
+            onClick={handleReload}
+            variant="outline"
+            size="icon"
+            >
+            <RefreshCw className="h-4 w-4" />
+            <span className="sr-only">Reload</span>
+            </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -114,14 +155,14 @@ export function InvoiceList() {
                   <Collapsible>
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" size="sm">
-                        {invoice.items.length} items ({invoice.items.reduce((acc, item) => acc + item.operation_numbers.length, 0)} OPs)
+                        {invoice.items.length} items ({invoice.items.reduce((acc, item) => acc + item.advertising_number.length, 0)} OPs)
                         <ChevronDown className="h-4 w-4 ml-2" />
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       {invoice.items.map((item, itemIndex) => (
                         <div key={itemIndex} className="mt-2">
-                          <strong>{item.description}</strong>: {item.operation_numbers.join(', ')}
+                          <strong>{item.description}</strong>: {item.advertising_number.join(', ')}
                         </div>
                       ))}
                     </CollapsibleContent>

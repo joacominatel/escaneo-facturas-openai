@@ -150,13 +150,14 @@ def get_invoice_by_op(op):
     Endpoint de la API para buscar facturas que contengan un número de publicidad específico.
 
     Args:
-        operation_number: El número de publicidad a buscar.
+        advertising_number: El número de publicidad a buscar.
         offset (query param): El número de resultados a omitir (para paginación).
         limit (query param): El número máximo de resultados a devolver.
 
     Returns:
-        Una respuesta JSON que contiene una lista de facturas coincidentes o un mensaje de error.    """
-    from modules.search_op import search_invoices_by_operation_number
+        Una respuesta JSON que contiene una lista de facturas coincidentes o un mensaje de error.    
+    """
+    from modules.search_op import search_invoices_by_advertising_order
 
     session = SessionLocal()
     try:
@@ -169,7 +170,7 @@ def get_invoice_by_op(op):
         session.close()
         return jsonify({'error': str(e), 'message': 'Los parámetros offset y limit deben ser números enteros'}), 400
     
-    invoices, total = search_invoices_by_operation_number(session, op, offset, limit)
+    invoices, total = search_invoices_by_advertising_order(session, op, offset, limit)
 
     if invoices:
         invoice_list = [invoice.serialize() for invoice in invoices]

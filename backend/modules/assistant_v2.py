@@ -39,7 +39,7 @@ def analyze_text(text):
             - **Items**: Cada línea de artículo debe incluir:
                 - **Description**: Descripción del servicio o producto.
                 - **Subtotal**: Importe del subtotal de cada artículo.
-                - **Operation Numbers (OP numbers)**: Extrae cualquier número de operación que comience con "OP". Estos pueden ser números independientes (ej., "OP123456") o múltiples entradas. Si no se encuentra ningún número de operación, este campo debe omitirse para ese artículo.
+                - **Advertising Number (OP numbers)**: Extrae cualquier número de operación que comience con "OP". Estos pueden ser números independientes (ej., "OP123456") o múltiples entradas. Si no se encuentra ningún número de operación, este campo debe omitirse para ese artículo.
             - **Subtotal**: El subtotal de todos los artículos antes de impuestos.
             - **Invoice total**: El importe total incluyendo impuestos.
 
@@ -60,7 +60,7 @@ def analyze_text(text):
                     {{
                         "description": "N/A",
                         "subtotal": "N/A",
-                        "operation_numbers": []
+                        "advertising_number": []
                     }}
                 ],
                 "subtotal": "N/A",
