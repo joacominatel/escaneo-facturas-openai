@@ -1,14 +1,14 @@
+import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Sidebar } from "@/components/sidebar"
-import { ThemeProvider } from "@/components/theme-provider"
+import Sidebar from "@/components/Sidebar"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AI Chat Attachment",
-  description: "Attach files to AI chat and ask questions",
+  title: "Invoice Analyzer",
+  description: "Analyze and manage your invoices",
 }
 
 export default function RootLayout({
@@ -17,18 +17,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider>
-          <div className="flex h-screen">
-            <Sidebar />
-            <main className="flex-1 overflow-y-auto">
-              {children}
-            </main>
-          </div>
-        </ThemeProvider>
+        <div className="flex h-screen">
+          <Sidebar />
+          <main className="flex-1 overflow-auto p-4">{children}</main>
+        </div>
       </body>
     </html>
   )
 }
-

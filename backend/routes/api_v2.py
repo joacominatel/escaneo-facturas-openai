@@ -199,6 +199,30 @@ def get_invoices():
     session.close()
     return jsonify({'error': 'No se encontraron facturas'}), 404
 
+@api_v2.route('/api_v2/invoices/<invoice_number>', methods=['GET'])
+def get_invoice(invoice_number):
+    """
+    Endpoint de la API para buscar una factura por su número.
+
+    Args:
+        invoice_number: El número de factura a buscar.
+
+    Returns:
+        Una respuesta JSON que contiene la factura o un mensaje de error.
+    """
+    from databases.models.invoice import InvoiceData
+
+    session = SessionLocal()
+    invoice = session.query(InvoiceData).filter(InvoiceData.invoice_number == invoice_number).first()
+
+    if invoice:
+        invoice_data = invoice.serialize()
+        session.close()
+        return jsonify(invoice_data), 200
+    
+    session.close()
+    return jsonify({'error': f"No se encontró la factura con el número {invoice_number}"}), 404
+
 
 @api_v2.route('/api_v2/invoices/<op>', methods=['GET'])
 def get_invoice_by_op(op):
