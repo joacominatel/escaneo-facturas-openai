@@ -199,7 +199,7 @@ def get_invoices():
     session.close()
     return jsonify({'error': 'No se encontraron facturas'}), 404
 
-@api_v2.route('/api_v2/invoices/<invoice_number>', methods=['GET'])
+@api_v2.route('/api_v2/invoices/invoice_number/<invoice_number>', methods=['GET'])
 def get_invoice(invoice_number):
     """
     Endpoint de la API para buscar una factura por su número.

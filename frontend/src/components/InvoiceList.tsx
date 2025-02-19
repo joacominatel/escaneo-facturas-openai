@@ -33,8 +33,9 @@ const InvoiceList = () => {
       setError(null)
       try {
         const offset = (page - 1) * limit
+        const searchQuery = searchTerm ? `?search=${searchTerm}&offset=${offset}&limit=${limit}` : `?offset=${offset}&limit=${limit}`
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api_v2/invoices${searchTerm}?offset=${offset}&limit=${limit}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api_v2/invoices${searchQuery}`,
         )
         if (!response.ok) {
           throw new Error("Failed to fetch invoices")
