@@ -6,13 +6,15 @@ services:
     container_name: sqlserver
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "Your_Strong_Password_Here"  # Cambia esto!
+      SA_PASSWORD: "${SQL_SA_PASSWORD}"
     ports:
-      - "1433:1433"
+      - "${SQL_PORT}:1433"
+    volumes:
+      - db-data:/var/opt/mssql  # Persistencia de datos
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_Strong_Password_Here -Q \"SELECT 1\""]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${SQL_SA_PASSWORD} -Q \"SELECT 1\""]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -20,39 +22,53 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: backend/Dockerfile.backend
     container_name: backend
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT}:5000"
     environment:
-      # Ejemplo de variables de entorno para conectar con la base de datos SQL Server
+      # Variables de conexión a SQL Server
       SQL_SERVER_HOST: db
-      SQL_SERVER_PORT: 1433
+      SQL_SERVER_PORT: "${SQL_PORT}"
       SQL_SERVER_USER: sa
-      SQL_SERVER_PASSWORD: "Your_Strong_Password_Here"
+      SQL_SERVER_PASSWORD: "${SQL_SA_PASSWORD}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
     networks:
       - app-network
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: "512M"
 
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: frontend/Dockerfile.frontend
     container_name: frontend
     depends_on:
       backend:
         condition: service_started
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:3000"
     environment:
       NEXT_PUBLIC_API_URL: "http://backend:5000"
     networks:
       - app-network
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: "512M"
 
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  db-data:
