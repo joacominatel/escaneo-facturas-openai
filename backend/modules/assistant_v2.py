@@ -32,7 +32,7 @@ def analyze_text(text):
         instructions = INSTRUCTIONS
 
         assistant = openai.beta.assistants.create(
-            model="gpt-o4-mini",
+            model="gpt-3.5-turbo",
             instructions=instructions,
             name="Invoice Analysis Assistant",
             temperature=0.3
