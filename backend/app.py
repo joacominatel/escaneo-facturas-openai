@@ -2,9 +2,11 @@ from flask import Flask, render_template
 from flask_cors import CORS
 from routes.api_v2 import api_v2
 import argparse
+from config.socketio_instance import socketio
 
 app = Flask(__name__)
-CORS(app, resources={r"/api_v2/*": {"origins": "*"}})
+CORS(app)
+socketio.init_app(app)
 
 app.register_blueprint(api_v2)
 
@@ -25,4 +27,4 @@ def index():
     return render_template("index.html")
     
 if __name__ == "__main__":
-    app.run(host=host, port=port, debug=debug)
+    socketio.run(host=host, port=port, debug=debug)

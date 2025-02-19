@@ -10,7 +10,7 @@ from modules.assistant_v2 import analyze_text, allowed_file
 from databases.db import SessionLocal, init_db
 from databases.models.invoice import save_invoice_data
 from modules.save_log import save_log
-
+from config.socketio_instance import socketio
 
 api_v2 = Blueprint("api_v2", __name__)
 
@@ -28,8 +28,11 @@ def analyze():
 
     files = request.files.getlist('files')
     if not files:
-      return jsonify({'error': 'No se han proporcionado archivos'}), 400
-    
+        return jsonify({'error': 'No se han proporcionado archivos'}), 400
+
+    # Se espera que el frontend envíe el 'socket_id' para direccionar los mensajes
+    socket_id = request.form.get("socket_id") or request.args.get("socket_id")
+
     results = []
     session = SessionLocal()
 
@@ -40,28 +43,54 @@ def analyze():
                 log_message = "Nombre de archivo vacío"
                 log_category = "error"
                 save_log(session, log_action, log_message, log_category)
-                return jsonify({'error': 'Nombre de archivo vacío'}), 400
+                if socket_id:
+                    socketio.emit('progress', {
+                        'status': 'error',
+                        'filename': '',
+                        'message': 'Nombre de archivo vacío'
+                    }, room=socket_id)
+                continue
 
             if not allowed_file(file.filename):
                 log_action = "analyze_error"
                 log_message = f"Formato de archivo no permitido. Solo se permiten: {ALLOWED_EXTENSIONS}"
                 log_category = "error"
                 save_log(session, log_action, log_message, log_category)
-                return jsonify({'error': f'Formato de archivo no permitido. Solo se permiten: {ALLOWED_EXTENSIONS}'}), 400
+                if socket_id:
+                    socketio.emit('progress', {
+                        'status': 'error',
+                        'filename': file.filename,
+                        'message': f'Formato de archivo no permitido. Solo se permiten: {ALLOWED_EXTENSIONS}'
+                    }, room=socket_id)
+                continue
 
             if file.content_length > MAX_FILE_SIZE:
                 log_action = "analyze_error"
                 log_message = f"El archivo excede el tamaño máximo permitido ({MAX_FILE_SIZE / (1024 * 1024)} MB)"
                 log_category = "error"
                 save_log(session, log_action, log_message, log_category)
-                return jsonify({'error': f'El archivo excede el tamaño máximo permitido ({MAX_FILE_SIZE / (1024 * 1024)} MB)'}), 400
-            
+                if socket_id:
+                    socketio.emit('progress', {
+                        'status': 'error',
+                        'filename': file.filename,
+                        'message': f'El archivo excede el tamaño máximo permitido ({MAX_FILE_SIZE / (1024 * 1024)} MB)'
+                    }, room=socket_id)
+                continue
+
+            # Enviar mensaje de inicio para esta factura
+            if socket_id:
+                socketio.emit('progress', {
+                    'status': 'start',
+                    'filename': file.filename,
+                    'message': f'Inicio procesamiento de {file.filename}'
+                }, room=socket_id)
+
             try:
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(file_path)
                 
-                images = convert_from_path(file_path, poppler_path=r'C:\\poppler-24.08.0\\Library\\bin')
+                images = convert_from_path(file_path)
                 text = ""
                 for image in images:
                     img_byte_arr = io.BytesIO()
@@ -70,16 +99,31 @@ def analyze():
                     image = Image.open(io.BytesIO(img_byte_arr))
                     text += pytesseract.image_to_string(image, lang='spa')
 
-                result = analyze_text(text) 
+                result = analyze_text(text)
                 results.append(result)
                 os.remove(file_path)
+
+                # Enviar mensaje de finalización con los datos de la factura
+                if socket_id:
+                    socketio.emit('progress', {
+                        'status': 'completed',
+                        'filename': file.filename,
+                        'message': f'Finalizó procesamiento de {file.filename}',
+                        'data': result
+                    }, room=socket_id)
             except Exception as e:
                 log_action = "analyze_error"
                 log_message = f"Error al procesar el archivo {file.filename}: {e}"
                 log_category = "error"
                 save_log(session, log_action, log_message, log_category)
-                results.append({"error": f"Error al procesar el archivo {file.filename}: {e}"})
-                print(f"Error al procesar archivo: {e}")
+                error_result = {"error": f"Error al procesar el archivo {file.filename}: {e}"}
+                results.append(error_result)
+                if socket_id:
+                    socketio.emit('progress', {
+                        'status': 'error',
+                        'filename': file.filename,
+                        'message': f'Error al procesar el archivo {file.filename}: {e}'
+                    }, room=socket_id)
 
             try:
                 save_invoice_data(session, result)
@@ -89,13 +133,25 @@ def analyze():
                 log_category = "error"
                 log_message = f"Error al guardar la factura {result.get('invoice_number')}: {str(e)}"
                 save_log(session, log_action, log_message, log_category)
-                results.append({"error": f"Error al guardar la factura {result.get('invoice_number')}: {str(e)}"})
+                error_result = {"error": f"Error al guardar la factura {result.get('invoice_number')}: {str(e)}"}
+                results.append(error_result)
+                if socket_id:
+                    socketio.emit('progress', {
+                        'status': 'error',
+                        'filename': file.filename,
+                        'message': f'Error al guardar la factura {result.get("invoice_number")}: {str(e)}'
+                    }, room=socket_id)
     except Exception as e:
         log_action = "general_error"
         log_message = f"Error general durante el procesamiento: {str(e)}"
         log_category = "error"
         save_log(session, log_action, log_message, log_category)
         results.append({"error": f"Error general durante el procesamiento: {str(e)}"})
+        if socket_id:
+            socketio.emit('progress', {
+                'status': 'error',
+                'message': f'Error general durante el procesamiento: {str(e)}'
+            }, room=socket_id)
     finally:
         session.close()
 
