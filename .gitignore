@@ -87,3 +87,6 @@ htmlcov/
 alembic.ini
 versions/
 alembic/
+
+# Composer de Docker
+docker-compose.yml
