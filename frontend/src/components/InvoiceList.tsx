@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -24,7 +23,6 @@ const InvoiceList = () => {
   const [page, setPage] = useState(1)
   const [totalInvoices, setTotalInvoices] = useState(0)
 
-  const searchParams = useSearchParams()
   const limit = 20
 
   useEffect(() => {

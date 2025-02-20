@@ -35,6 +35,7 @@ services:
       SQL_SERVER_PORT: "${SQL_PORT}"
       SQL_SERVER_USER: sa
       SQL_SERVER_PASSWORD: "${SQL_SA_PASSWORD}"
+      SQL_SERVER_DBNAME: "${SQL_DBNAME}"
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
     networks:
       - app-network
