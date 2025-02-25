@@ -105,12 +105,14 @@ def analyze():
 
                 # Enviar mensaje de finalización con los datos de la factura
                 if socket_id:
-                    socketio.emit('progress', {
+                    # Suponiendo que result es un diccionario con 'invoice_number' y otros campos
+                    payload = {
                         'status': 'completed',
                         'filename': file.filename,
                         'message': f'Finalizó procesamiento de {file.filename}',
-                        'data': result
-                    }, room=socket_id)
+                        **result  # Expande las propiedades de result al nivel superior
+                    }
+                    socketio.emit('progress', payload, room=socket_id)
             except Exception as e:
                 log_action = "analyze_error"
                 log_message = f"Error al procesar el archivo {file.filename}: {e}"

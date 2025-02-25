@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, JSON
-from databases.db import Base
+from databases import Base
 from datetime import datetime
 from databases.models.log import LogData
 from modules.save_log import save_log

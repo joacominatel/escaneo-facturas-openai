@@ -22,6 +22,7 @@ export default function Home() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api_v2/invoices/invoice_number/${invoiceNumber}`)
       if (response.ok) {
         const data = await response.json()
+        console.log("Fetched invoice data:", data)
         setInvoices((prevInvoices) => ({
           ...prevInvoices,
           [data.invoice_number]: {
